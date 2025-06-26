@@ -17,5 +17,53 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        $exceptions->render(function (\Illuminate\Database\Eloquent\ModelNotFoundException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $model = class_basename($e->getModel());
+                return response()->json([
+                    'status' => 'error',
+                    'message' => "Data {$model} tidak ditemukan",
+                    'code' => 404
+                ], 404);
+            }
+        });
+
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\NotFoundHttpException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                $message = 'Resource tidak ditemukan';
+                
+                // Check if it's caused by ModelNotFoundException
+                $previous = $e->getPrevious();
+                if ($previous instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+                    $model = class_basename($previous->getModel());
+                    $message = "Data {$model} tidak ditemukan";
+                }
+                
+                return response()->json([
+                    'status' => 'error',
+                    'message' => $message,
+                    'code' => 404
+                ], 404);
+            }
+        });
+
+        $exceptions->render(function (\Illuminate\Validation\ValidationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Data yang diberikan tidak valid',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+        });
+
+        $exceptions->render(function (\Illuminate\Auth\AuthenticationException $e, $request) {
+            if ($request->is('api/*') || $request->expectsJson()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized. Token tidak valid atau sudah expired',
+                    'code' => 401
+                ], 401);
+            }
+        });
     })->create();

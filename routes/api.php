@@ -2,8 +2,12 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\FormServiceController;
+
+// Public routes (tidak perlu authentication)
+Route::post('/login', [AuthController::class, 'login']);
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -42,7 +46,12 @@ Route::middleware(['auth:sanctum', 'role:teknisi'])->group(function () {
 
 // Routes yang bisa diakses oleh admin atau teknisi
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/profile', function (Request $request) {
+    // Auth routes
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/profile', [AuthController::class, 'profile']);
+    Route::post('/refresh-token', [AuthController::class, 'refresh']);
+    
+    Route::get('/profile-old', function (Request $request) {
         return response()->json([
             'user' => $request->user(),
             'role' => $request->user()->role
