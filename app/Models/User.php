@@ -22,11 +22,37 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'phone',
+        'role',
     ];
     
     public function formServices()
     {
         return $this->hasMany(FormService::class, 'id_user', 'id_user');
+    }
+
+    /**
+     * Check if user has a specific role
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    /**
+     * Check if user is admin
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    /**
+     * Check if user is teknisi
+     */
+    public function isTeknisi(): bool
+    {
+        return $this->role === 'teknisi';
     }
 
     /**
