@@ -23,6 +23,11 @@ class User extends Authenticatable
         'email',
         'password',
     ];
+    
+    public function formServices()
+    {
+        return $this->hasMany(FormService::class, 'id_user', 'id_user');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -46,4 +51,6 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+
 }
