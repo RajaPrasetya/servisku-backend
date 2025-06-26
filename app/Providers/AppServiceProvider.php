@@ -22,5 +22,9 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Sanctum::usePersonalAccessTokenModel(PersonalAccessToken::class);
+        
+        // Route model binding untuk custom primary keys
+        \Illuminate\Support\Facades\Route::model('customer', \App\Models\Customer::class);
+        \Illuminate\Support\Facades\Route::model('formService', \App\Models\FormService::class);
     }
 }

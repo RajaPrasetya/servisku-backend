@@ -124,14 +124,17 @@ class ApiResponse
      *
      * @param mixed $data
      * @param string $message
+     * @param string $resourceClass
      * @return JsonResponse
      */
-    public static function paginated($data, string $message = 'Data retrieved successfully'): JsonResponse
+    public static function paginated($data, string $message = 'Data retrieved successfully', string $resourceClass = null): JsonResponse
     {
+        $items = $resourceClass ? $resourceClass::collection($data) : $data->items();
+        
         $response = [
             'success' => true,
             'message' => $message,
-            'data' => $data->items(),
+            'data' => $items,
             'pagination' => [
                 'current_page' => $data->currentPage(),
                 'last_page' => $data->lastPage(),

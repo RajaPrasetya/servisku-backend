@@ -6,6 +6,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class FormService extends Model
 {
+    protected $primaryKey = 'no_form';
+    
     protected $fillable = [
         'status',
         'id_customer',

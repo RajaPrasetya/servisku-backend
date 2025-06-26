@@ -6,9 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 
 class Customer extends Model
 {
+    protected $primaryKey = 'id_customer';
+    
     protected $fillable = [
-        'name',
-        'phone',
+        'nama',
+        'no_telp',
+        'alamat',
     ];
 
     public function formServices()

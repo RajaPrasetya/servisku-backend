@@ -66,9 +66,9 @@ trait ApiResponseTrait
     /**
      * Return a paginated response
      */
-    protected function paginatedResponse($data, string $message = 'Data retrieved successfully'): JsonResponse
+    protected function paginatedResponse($data, string $message = 'Data retrieved successfully', string $resourceClass = null): JsonResponse
     {
-        return ApiResponse::paginated($data, $message);
+        return ApiResponse::paginated($data, $message, $resourceClass);
     }
 
     /**

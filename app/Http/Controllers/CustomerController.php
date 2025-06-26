@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Customer;
 use App\Http\Requests\StoreCustomerRequest;
 use App\Http\Requests\UpdateCustomerRequest;
+use App\Http\Resources\CustomerResource;
 use App\Traits\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class CustomerController extends Controller
 {
@@ -15,14 +17,45 @@ class CustomerController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $customers = Customer::paginate(10);
+            $query = Customer::query();
             
-            return $this->paginatedResponse($customers, 'Customers retrieved successfully');
+            // Search by name, phone, or address
+            if ($request->has('search')) {
+                $search = $request->search;
+                $query->where(function($q) use ($search) {
+                    $q->where('nama', 'LIKE', "%{$search}%")
+                      ->orWhere('no_telp', 'LIKE', "%{$search}%")
+                      ->orWhere('alamat', 'LIKE', "%{$search}%");
+                });
+            }
+            
+            // Filter by specific fields
+            if ($request->has('nama')) {
+                $query->where('nama', 'LIKE', "%{$request->nama}%");
+            }
+            
+            if ($request->has('no_telp')) {
+                $query->where('no_telp', 'LIKE', "%{$request->no_telp}%");
+            }
+            
+            // Include form services if requested
+            if ($request->boolean('with_services')) {
+                $query->with('formServices');
+            }
+            
+            $perPage = $request->get('per_page', 10);
+            $customers = $query->latest()->paginate($perPage);
+            
+            return $this->paginatedResponse(
+                $customers,
+                'Customers retrieved successfully',
+                CustomerResource::class
+            );
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve customers');
+            return $this->serverErrorResponse('Failed to retrieve customers: ' . $e->getMessage());
         }
     }
 
@@ -34,21 +67,32 @@ class CustomerController extends Controller
         try {
             $customer = Customer::create($request->validated());
             
-            return $this->createdResponse($customer, 'Customer created successfully');
+            return $this->createdResponse(
+                new CustomerResource($customer), 
+                'Customer created successfully'
+            );
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to create customer');
+            return $this->serverErrorResponse('Failed to create customer: ' . $e->getMessage());
         }
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Customer $customer): JsonResponse
+    public function show(Customer $customer, Request $request): JsonResponse
     {
         try {
-            return $this->successResponse($customer, 'Customer retrieved successfully');
+            // Include form services if requested
+            if ($request->boolean('with_services')) {
+                $customer->load('formServices');
+            }
+            
+            return $this->successResponse(
+                new CustomerResource($customer), 
+                'Customer retrieved successfully'
+            );
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to retrieve customer');
+            return $this->serverErrorResponse('Failed to retrieve customer: ' . $e->getMessage());
         }
     }
 
@@ -60,9 +104,12 @@ class CustomerController extends Controller
         try {
             $customer->update($request->validated());
             
-            return $this->successResponse($customer->fresh(), 'Customer updated successfully');
+            return $this->successResponse(
+                new CustomerResource($customer->fresh()), 
+                'Customer updated successfully'
+            );
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to update customer');
+            return $this->serverErrorResponse('Failed to update customer: ' . $e->getMessage());
         }
     }
 
@@ -72,11 +119,75 @@ class CustomerController extends Controller
     public function destroy(Customer $customer): JsonResponse
     {
         try {
+            // Check if customer has form services
+            if ($customer->formServices()->exists()) {
+                return $this->errorResponse(
+                    'Cannot delete customer. Customer has existing form services.',
+                    400
+                );
+            }
+            
             $customer->delete();
             
             return $this->successResponse(null, 'Customer deleted successfully');
         } catch (\Exception $e) {
-            return $this->serverErrorResponse('Failed to delete customer');
+            return $this->serverErrorResponse('Failed to delete customer: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Search customers by various criteria
+     */
+    public function search(Request $request): JsonResponse
+    {
+        $request->validate([
+            'q' => 'required|string|min:2',
+            'fields' => 'sometimes|array',
+            'fields.*' => 'in:nama,no_telp,alamat'
+        ]);
+
+        try {
+            $query = Customer::query();
+            $searchTerm = $request->q;
+            $fields = $request->get('fields', ['nama', 'no_telp', 'alamat']);
+            
+            $query->where(function($q) use ($searchTerm, $fields) {
+                foreach ($fields as $field) {
+                    $q->orWhere($field, 'LIKE', "%{$searchTerm}%");
+                }
+            });
+            
+            $perPage = $request->get('per_page', 10);
+            $customers = $query->latest()->paginate($perPage);
+            
+            return $this->paginatedResponse(
+                $customers,
+                'Search results retrieved successfully',
+                CustomerResource::class
+            );
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Search failed: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get customer statistics
+     */
+    public function statistics(): JsonResponse
+    {
+        try {
+            $stats = [
+                'total_customers' => Customer::count(),
+                'customers_today' => Customer::whereDate('created_at', today())->count(),
+                'customers_this_month' => Customer::whereMonth('created_at', now()->month)
+                    ->whereYear('created_at', now()->year)->count(),
+                'customers_with_services' => Customer::has('formServices')->count(),
+                'customers_without_services' => Customer::doesntHave('formServices')->count(),
+            ];
+            
+            return $this->successResponse($stats, 'Customer statistics retrieved successfully');
+        } catch (\Exception $e) {
+            return $this->serverErrorResponse('Failed to retrieve customer statistics: ' . $e->getMessage());
         }
     }
 }
