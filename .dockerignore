@@ -1,0 +1,65 @@
+# Dependencies
+node_modules
+vendor
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.backup
+.env.local
+.env.testing
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Laravel specific
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+
+# Storage
+storage/logs/*
+!storage/logs/.gitkeep
+storage/framework/cache/*
+!storage/framework/cache/.gitkeep
+storage/framework/sessions/*
+!storage/framework/sessions/.gitkeep
+storage/framework/testing/*
+!storage/framework/testing/.gitkeep
+storage/framework/views/*
+!storage/framework/views/.gitkeep
+
+# Documentation
+*.md
+!README.md
+
+# Postman collections
+*.postman_collection.json
+*.postman_environment.json
+
+# Docker files (don't copy into container)
+docker-compose.yml
+docker-compose.*.yml
+Dockerfile
+.dockerignore
+
+# Deployment scripts
+deploy.sh
