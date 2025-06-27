@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "servisku-api-collection",
 		"name": "ServisKu Backend API",
-		"description": "Complete API collection for ServisKu Backend with Authentication, Customer Management, and Form Service Management",
+		"description": "Complete API collection for ServisKu Backend with Authentication, Customer Management, and Form Service Management. Features SINGLE endpoint for complete form service creation accessible by both Admin and Teknisi.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"auth": {
@@ -18,6 +18,11 @@
 	"variable": [
 		{
 			"key": "base_url",
+			"value": "https://laravel.rajaprasetya.web.id/api",
+			"type": "string"
+		},
+		{
+			"key": "base_url_local",
 			"value": "http://localhost:8000/api",
 			"type": "string"
 		},
@@ -300,6 +305,53 @@
 							"raw": "{{base_url}}/profile",
 							"host": ["{{base_url}}"],
 							"path": ["profile"]
+						}
+					}
+				},
+				{
+					"name": "Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains valid flag\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('valid');",
+									"    pm.expect(jsonData.valid).to.be.true;",
+									"});",
+									"",
+									"pm.test(\"Response contains user data\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data.user).to.have.property('id');",
+									"    pm.expect(jsonData.data.user).to.have.property('role');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/validate-token",
+							"host": ["{{base_url}}"],
+							"path": ["validate-token"]
 						}
 					}
 				}
@@ -641,7 +693,7 @@
 					}
 				},
 				{
-					"name": "Get All Form Services (Admin)",
+					"name": "Get All Form Services with Relations (Admin)",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -655,33 +707,38 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/form-services?per_page=10&status=diterima&search=john",
+							"raw": "{{base_url}}/form-services?per_page=10",
 							"host": ["{{base_url}}"],
 							"path": ["form-services"],
 							"query": [
 								{
 									"key": "per_page",
-									"value": "10"
+									"value": "10",
+									"description": "Number of items per page"
 								},
 								{
 									"key": "status",
 									"value": "diterima",
-									"disabled": true
+									"disabled": true,
+									"description": "Filter by status: diterima, proses, selesai, dibatalkan"
 								},
 								{
 									"key": "id_customer",
 									"value": "",
-									"disabled": true
+									"disabled": true,
+									"description": "Filter by customer ID"
 								},
 								{
 									"key": "id_user",
 									"value": "",
-									"disabled": true
+									"disabled": true,
+									"description": "Filter by user/teknisi ID"
 								},
 								{
 									"key": "search",
-									"value": "john",
-									"disabled": true
+									"value": "",
+									"disabled": true,
+									"description": "Search by customer name or user name"
 								}
 							]
 						}
@@ -717,7 +774,53 @@
 					}
 				},
 				{
-					"name": "Get Single Form Service (Admin)",
+					"name": "Create Form Service (ONLY Endpoint - Admin & Teknisi)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    var jsonData = pm.response.json();",
+									"    if (jsonData.data && jsonData.data.no_form) {",
+									"        pm.environment.set(\"form_service_id\", jsonData.data.no_form);",
+									"        console.log(\"Form Service ID saved: \" + jsonData.data.no_form);",
+									"    }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\": \"diterima\",\n    \"id_customer\": 1,\n    \"id_user\": 2,\n    \"detail_service\": {\n        \"tgl_masuk\": \"2025-06-28\",\n        \"tgl_selesai\": \"2025-07-01\",\n        \"estimasi\": \"3 hari\",\n        \"biaya\": 250000\n    },\n    \"unit_services\": [\n        {\n            \"tipe_unit\": \"Laptop HP Pavilion\",\n            \"serial_number\": \"HP123456789\",\n            \"kerusakan\": \"Layar berkedip dan sering blue screen\",\n            \"kelengkapan\": \"Charger, tas laptop, mouse\"\n        },\n        {\n            \"tipe_unit\": \"Mouse Wireless\",\n            \"serial_number\": \"MW123\",\n            \"kerusakan\": \"Scroll wheel macet\",\n            \"kelengkapan\": \"USB receiver\"\n        }\n    ],\n    \"status_garansi\": {\n        \"garansi\": \"12 bulan\",\n        \"tgl_beli\": \"2024-08-15\",\n        \"no_nota\": \"NT789HP2024\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/form-services",
+							"host": ["{{base_url}}"],
+							"path": ["form-services"]
+						}
+					}
+				},
+				{
+					"name": "Get Single Form Service with All Relations (Admin)",
 					"request": {
 						"method": "GET",
 						"header": [

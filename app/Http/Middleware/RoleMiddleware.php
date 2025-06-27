@@ -13,9 +13,9 @@ class RoleMiddleware
      * Handle an incoming request.
      *
      * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     * @param  string  $role
+     * @param  string  $roles (dapat berupa single role atau multiple roles dipisah koma)
      */
-    public function handle(Request $request, Closure $next, string $role): Response
+    public function handle(Request $request, Closure $next, string $roles): Response
     {
         // Check if user is authenticated
         if (!Auth::check()) {
@@ -25,12 +25,15 @@ class RoleMiddleware
         }
 
         $user = Auth::user();
+        
+        // Convert roles string to array (split by comma)
+        $allowedRoles = array_map('trim', explode(',', $roles));
 
-        // Check if user has the required role
-        if ($user->role !== $role) {
+        // Check if user has any of the required roles
+        if (!in_array($user->role, $allowedRoles)) {
             return response()->json([
                 'message' => 'Forbidden. You do not have permission to access this resource.',
-                'required_role' => $role,
+                'required_roles' => $allowedRoles,
                 'your_role' => $user->role
             ], 403);
         }

@@ -46,6 +46,29 @@ class FormServiceResource extends JsonResource
                     'biaya' => $this->detailService->biaya,
                 ];
             }),
+            'unit_services' => $this->whenLoaded('unitServices', function () {
+                return $this->unitServices->map(function ($unit) {
+                    return [
+                        'id' => $unit->id,
+                        'tipe_unit' => $unit->tipe_unit,
+                        'serial_number' => $unit->serial_number,
+                        'kerusakan' => $unit->kerusakan,
+                        'kelengkapan' => $unit->kelengkapan,
+                        'created_at' => $unit->created_at?->format('Y-m-d H:i:s'),
+                        'updated_at' => $unit->updated_at?->format('Y-m-d H:i:s'),
+                    ];
+                });
+            }),
+            'status_garansi' => $this->whenLoaded('statusGaransi', function () {
+                return [
+                    'id' => $this->statusGaransi->id,
+                    'garansi' => $this->statusGaransi->garansi,
+                    'tgl_beli' => $this->statusGaransi->tgl_beli,
+                    'no_nota' => $this->statusGaransi->no_nota,
+                    'created_at' => $this->statusGaransi->created_at?->format('Y-m-d H:i:s'),
+                    'updated_at' => $this->statusGaransi->updated_at?->format('Y-m-d H:i:s'),
+                ];
+            }),
         ];
     }
 

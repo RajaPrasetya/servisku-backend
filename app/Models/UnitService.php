@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class UnitService extends Model
 {
     protected $fillable = [
+        'no_form',
         'tipe_unit',
         'serial_number',
         'kerusakan',

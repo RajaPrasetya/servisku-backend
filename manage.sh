@@ -4,7 +4,7 @@
 
 case "$1" in
     "start")
-        echo "🚀        echo "📖 Usage: $0 {start|stop|restart|logs|shell|migrate|seed|cache-clear|cache-optimize|status|backup|update|build|deploy|test|fresh|queue}"
+        echo "🚀        echo "📖 Usage: $0 {start|stop|restart|logs|shell|migrate|seed|cache-clear|cache-optimize|status|backup|update|build|deploy|test|fresh|queue|refresh-demo}"
         echo ""
         echo "Commands:"
         echo "  start         - Start the application"
@@ -23,7 +23,8 @@ case "$1" in
         echo "  deploy        - Full deployment with migration"
         echo "  test          - Run Laravel tests"
         echo "  fresh         - Fresh migration with seeding"
-        echo "  queue         - Start queue worker"sKu Backend..."
+        echo "  queue         - Start queue worker"
+        echo "  refresh-demo  - Refresh database with demo data"sKu Backend..."
         docker-compose up -d
         ;;
     "stop")
@@ -114,6 +115,11 @@ case "$1" in
     "queue")
         echo "⚡ Starting queue worker..."
         docker-compose exec app php artisan queue:work
+        ;;
+    "refresh-demo")
+        echo "🔄 Refreshing demo data..."
+        $DOCKER_COMPOSE exec app php artisan migrate:fresh --seed
+        echo "✅ Demo data refreshed!"
         ;;
     *)
         echo "📖 Usage: $0 {start|stop|restart|logs|shell|migrate|seed|cache-clear|cache-optimize|status|backup|update|build|deploy|test|fresh|queue}"

@@ -1,61 +1,227 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ServisKu Backend API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+[![Laravel](https://img.shields.io/badge/Laravel-11.x-red.svg)](https://laravel.com)
+[![PHP](https://img.shields.io/badge/PHP-8.1+-blue.svg)](https://php.net)
+[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://docker.com)
 
-## About Laravel
+## 📝 About ServisKu
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+ServisKu adalah sistem manajemen service elektronik yang memungkinkan admin dan teknisi untuk mengelola form service dengan data relasional yang lengkap. Sistem ini menyediakan API yang robust untuk manajemen customer, user, dan form service dengan fitur authentication dan authorization berbasis role.
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## ✨ Key Features
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🔐 Authentication & Authorization
+- **JWT Token-based authentication** dengan Laravel Sanctum
+- **Role-based access control** (Admin, Teknisi)
+- **Token validation endpoint** untuk mengecek validitas token
+- **Multi-user support** dengan roles yang berbeda
 
-## Learning Laravel
+### 📋 Form Service Management
+- **Single endpoint creation** untuk form service lengkap
+- **Complete relational data** (detail_service, unit_services, status_garansi)
+- **Database transactions** untuk konsistensi data
+- **Multiple units support** dalam satu form service
+- **Auto-generated form numbers**
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+### 👥 User & Customer Management
+- **Customer management** dengan search dan statistics
+- **User management** dengan role assignment
+- **Profile management** untuk authenticated users
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 📊 Advanced Features
+- **Statistics and reporting** untuk admin
+- **Search and filtering** pada semua endpoints
+- **Pagination support** untuk large datasets
+- **Error handling** dengan response yang konsisten
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## 🚀 API Endpoints
 
-## Laravel Sponsors
+### Authentication
+```
+POST   /api/login              # User login
+GET    /api/validate-token     # Validate token validity
+POST   /api/logout             # User logout
+GET    /api/profile            # Get user profile
+POST   /api/refresh-token      # Refresh authentication token
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### Form Services
+```
+POST   /api/form-services      # Create complete form service (Admin & Teknisi)
+GET    /api/form-services      # List all form services (Admin)
+GET    /api/form-services/{id} # Get specific form service
+PUT    /api/form-services/{id} # Update form service (Admin)
+DELETE /api/form-services/{id} # Delete form service (Admin)
+GET    /api/form-services/statistics # Get statistics (Admin)
+```
 
-### Premium Partners
+### Customers
+```
+GET    /api/customers          # List customers
+POST   /api/customers          # Create customer
+GET    /api/customers/{id}     # Get specific customer
+PUT    /api/customers/{id}     # Update customer
+DELETE /api/customers/{id}     # Delete customer
+GET    /api/customers/search   # Search customers
+GET    /api/customers/statistics # Customer statistics
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+## 🔧 Installation & Setup
 
-## Contributing
+### Using Docker (Recommended)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd servisku-backend
+   ```
 
-## Code of Conduct
+2. **Environment setup**
+   ```bash
+   cp .env.docker .env
+   # Edit .env with your configuration
+   ```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+3. **Build and run with Docker**
+   ```bash
+   # Build and start containers
+   docker-compose up -d --build
+   
+   # Install dependencies
+   docker-compose exec app composer install
+   
+   # Generate application key
+   docker-compose exec app php artisan key:generate
+   
+   # Run migrations
+   docker-compose exec app php artisan migrate
+   
+   # Seed demo data
+   docker-compose exec app php artisan db:seed --class=DemoSeeder
+   ```
 
-## Security Vulnerabilities
+### Manual Installation
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+1. **Requirements**
+   - PHP 8.1+
+   - MySQL 5.7+
+   - Composer
+   - Node.js & NPM
 
-## License
+2. **Setup**
+   ```bash
+   composer install
+   cp .env.example .env
+   php artisan key:generate
+   php artisan migrate
+   php artisan db:seed --class=DemoSeeder
+   php artisan serve
+   ```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 📚 Documentation
+
+### API Documentation Files
+- `API_RESPONSE_HELPER.md` - Response format standards
+- `COMPLETE_FORM_SERVICE_API.md` - Complete form service endpoint
+- `TOKEN_VALIDATION_API.md` - Token validation endpoint
+- `CUSTOMER_API.md` - Customer management API
+- `POSTMAN_COLLECTION_GUIDE.md` - Postman collection guide
+
+### Database Documentation
+- `FORMSERVICE_PRODUCTION_READY.md` - Production deployment guide
+- `SINGLE_ENDPOINT_SUMMARY.md` - Single endpoint implementation
+
+## 🧪 Testing
+
+### Using Postman
+1. Import `ServisKu_API_Collection.postman_collection.json`
+2. Import `ServisKu_Environment.postman_environment.json`
+3. Set environment variables (base_url, etc.)
+4. Test authentication and API endpoints
+
+### Demo Users
+```
+Admin:
+- Email: admin@servisku.com
+- Password: password
+
+Teknisi 1:
+- Email: teknisi1@servisku.com
+- Password: password
+
+Teknisi 2:
+- Email: teknisi2@servisku.com
+- Password: password
+```
+
+## 🐳 Docker Management
+
+### Available Scripts
+```bash
+# Start services
+./manage.sh start
+
+# Stop services
+./manage.sh stop
+
+# Deploy to production
+./deploy.sh
+
+# Refresh demo data
+./refresh-demo.sh
+```
+
+## 🔒 Security Features
+
+- **Token-based authentication** dengan expiration
+- **Role-based authorization** middleware
+- **Input validation** pada semua endpoints
+- **SQL injection protection** dengan Eloquent ORM
+- **Error handling** tanpa information disclosure
+
+## 📊 Production Deployment
+
+### Environment Requirements
+- **Docker & Docker Compose**
+- **Nginx** untuk reverse proxy
+- **SSL Certificate** untuk HTTPS
+- **MySQL** database server
+
+### Deployment Steps
+1. Setup server dengan Docker
+2. Configure Nginx dengan SSL
+3. Run deployment script: `./deploy.sh`
+4. Configure environment variables
+5. Run database migrations dan seeding
+
+## 🛠️ Development
+
+### Code Structure
+```
+app/
+├── Http/Controllers/    # API Controllers
+├── Models/             # Eloquent Models
+├── Http/Resources/     # API Resources
+├── Http/Requests/      # Form Requests
+├── Middleware/         # Custom Middleware
+└── Traits/            # Reusable Traits
+
+database/
+├── migrations/        # Database migrations
+├── seeders/          # Data seeders
+└── factories/        # Model factories
+```
+
+### Key Components
+- **ApiResponseTrait** - Consistent API responses
+- **RoleMiddleware** - Role-based access control
+- **FormServiceResource** - Complete relational data formatting
+- **DemoSeeder** - Production-ready demo data
+
+## 📝 License
+
+This project is proprietary software. All rights reserved.
+
+## 🤝 Support
+
+For technical support or questions about the API, please contact the development team.
