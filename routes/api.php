@@ -6,29 +6,49 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\FormServiceController;
 
-// Public routes (tidak perlu authentication)
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Struktur API Routes ServisKu:
+| 1. Public Routes (tanpa autentikasi)
+| 2. Token Validation Routes
+| 3. Admin Only Routes
+| 4. Teknisi Only Routes
+| 5. Admin & Teknisi Routes
+| 6. Authenticated User Routes
+|
+*/
+
+// ============================================================================
+// 1. PUBLIC ROUTES (Tanpa Autentikasi)
+// ============================================================================
 Route::post('/login', [AuthController::class, 'login']);
 
-// Token validation endpoint - requires authentication
+// ============================================================================
+// 2. TOKEN VALIDATION ROUTES
+// ============================================================================
 Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/validate-token', [AuthController::class, 'validateToken']);
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
 });
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
-
-// Routes yang hanya bisa diakses oleh admin
+// ============================================================================
+// 3. ADMIN ONLY ROUTES
+// ============================================================================
 Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
+    // Admin Dashboard
     Route::get('/admin/users', function () {
         return response()->json(['message' => 'Admin access granted']);
     });
-    
     Route::get('/admin/dashboard', function () {
         return response()->json(['message' => 'Admin dashboard']);
     });
     
-    // Admin dapat mengakses semua form services dan statistik
+    // Form Services - Admin Full Access
     Route::get('/form-services/statistics', [FormServiceController::class, 'getStatistics']);
     Route::get('/form-services', [FormServiceController::class, 'index']);
     Route::get('/form-services/{formService}', [FormServiceController::class, 'show']);
@@ -36,36 +56,43 @@ Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
     Route::delete('/form-services/{formService}', [FormServiceController::class, 'destroy']);
 });
 
-// Routes yang hanya bisa diakses oleh teknisi
+// ============================================================================
+// 4. TEKNISI ONLY ROUTES
+// ============================================================================
 Route::middleware(['auth:sanctum', 'role:teknisi'])->group(function () {
+    // Teknisi Dashboard
     Route::get('/teknisi/services', function () {
         return response()->json(['message' => 'Teknisi access granted']);
     });
-    
     Route::get('/teknisi/dashboard', function () {
         return response()->json(['message' => 'Teknisi dashboard']);
     });
     
-    // Teknisi dapat mengakses form services yang ditugaskan kepadanya
+    // Form Services - Teknisi Limited Access (only assigned services)
     Route::get('/teknisi/form-services', [FormServiceController::class, 'index']);
     Route::get('/teknisi/form-services/{formService}', [FormServiceController::class, 'show']);
     Route::put('/teknisi/form-services/{formService}/status', [FormServiceController::class, 'updateStatus']);
 });
 
-// Routes yang bisa diakses oleh admin atau teknisi
+// ============================================================================
+// 5. ADMIN & TEKNISI ROUTES
+// ============================================================================
 Route::middleware(['auth:sanctum', 'role:admin,teknisi'])->group(function () {
-    // SATU-SATUNYA endpoint untuk membuat form service lengkap
-    // Dapat diakses oleh Admin dan Teknisi
+    // Form Service Creation - Available for Admin and Teknisi
     Route::post('/form-services', [FormServiceController::class, 'storeComplete']);
 });
 
-// Routes yang bisa diakses oleh semua user yang terautentikasi
+// ============================================================================
+// 6. AUTHENTICATED USER ROUTES (All authenticated users)
+// ============================================================================
 Route::middleware(['auth:sanctum'])->group(function () {
-    // Auth routes
+    
+    // Authentication & Profile Management
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::post('/refresh-token', [AuthController::class, 'refresh']);
     
+    // Legacy profile endpoint (TODO: remove in future version)
     Route::get('/profile-old', function (Request $request) {
         return response()->json([
             'user' => $request->user(),
@@ -73,70 +100,13 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ]);
     });
     
-    // Customer routes
+    // Customer Management
     Route::get('/customers/search', [CustomerController::class, 'search']);
     Route::get('/customers/statistics', [CustomerController::class, 'statistics']);
     Route::apiResource('customers', CustomerController::class);
     
-    // Form service routes yang bisa diakses berdasarkan customer atau user
-    Route::get('/customers/{customerId}/form-services', [FormServiceController::class, 'getByCustomer']);
-    Route::get('/users/{userId}/form-services', [FormServiceController::class, 'getByUser']);
-});
-
-// Routes yang bisa diakses oleh semua user yang terautentikasi
-Route::middleware(['auth:sanctum'])->group(function () {
-    // Auth routes
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/profile', [AuthController::class, 'profile']);
-    Route::post('/refresh-token', [AuthController::class, 'refresh']);
-    
-    Route::get('/profile-old', function (Request $request) {
-        return response()->json([
-            'user' => $request->user(),
-            'role' => $request->user()->role
-        ]);
-    });
-    
-    // Customer routes
-    Route::get('/customers/search', [CustomerController::class, 'search']);
-    Route::get('/customers/statistics', [CustomerController::class, 'statistics']);
-    Route::apiResource('customers', CustomerController::class);
-    
-    // Form service routes yang bisa diakses berdasarkan customer atau user
+    // Form Service Relations
     Route::get('/customers/{customerId}/form-services', [FormServiceController::class, 'getByCustomer']);
     Route::get('/users/{userId}/form-services', [FormServiceController::class, 'getByUser']);
     
-    // Debug endpoint for testing form service creation
-    Route::post('/debug/form-service', function(Request $request) {
-        \Log::info('Debug Form Service Request:', $request->all());
-        
-        $validated = $request->validate([
-            'status' => 'required|string|in:diterima,proses,selesai,dibatalkan',
-            'id_customer' => 'required|integer|exists:customers,id_customer',
-            'id_user' => 'required|integer|exists:users,id_user',
-        ]);
-        
-        \Log::info('Debug Validated Data:', $validated);
-        
-        try {
-            $formService = \App\Models\FormService::create([
-                'status' => $validated['status'],
-                'id_customer' => $validated['id_customer'], 
-                'id_user' => $validated['id_user'],
-            ]);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Debug form service created',
-                'data' => $formService
-            ]);
-        } catch (\Exception $e) {
-            \Log::error('Debug Form Service Error:', ['error' => $e->getMessage()]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Error creating debug form service',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    });
 });
