@@ -99,4 +99,50 @@ class AuthController extends Controller
             ]
         ], 200);
     }
+
+    /**
+     * Validate token - Check if token is valid
+     */
+    public function validateToken(Request $request)
+    {
+        try {
+            $user = $request->user();
+            
+            if (!$user) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid token',
+                    'valid' => false
+                ], 401);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Token is valid',
+                'valid' => true,
+                'data' => [
+                    'user' => [
+                        'id' => $user->id_user,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'phone' => $user->phone,
+                        'role' => $user->role,
+                    ],
+                    'token_info' => [
+                        'token_name' => $request->user()->currentAccessToken()->name,
+                        'created_at' => $request->user()->currentAccessToken()->created_at,
+                        'last_used_at' => $request->user()->currentAccessToken()->last_used_at,
+                    ]
+                ]
+            ], 200);
+            
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Token validation failed',
+                'valid' => false,
+                'error' => $e->getMessage()
+            ], 401);
+        }
+    }
 }
