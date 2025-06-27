@@ -121,27 +121,71 @@ case "$1" in
         $DOCKER_COMPOSE exec app php artisan migrate:fresh --seed
         echo "✅ Demo data refreshed!"
         ;;
+    "composer-install")
+        echo "📦 Installing Composer dependencies for production..."
+        docker-compose exec app composer install --no-dev --optimize-autoloader
+        echo "✅ Composer install completed!"
+        ;;
+    "composer-dev")
+        echo "📦 Installing Composer dependencies with dev packages..."
+        docker-compose exec app composer install --optimize-autoloader
+        echo "✅ Composer dev install completed!"
+        ;;
+    "fix-pail")
+        echo "🔧 Fixing Laravel Pail issue..."
+        docker-compose exec app composer remove laravel/pail
+        docker-compose exec app php artisan package:discover --ansi
+        docker-compose exec app composer dump-autoload
+        echo "✅ Laravel Pail removed!"
+        ;;
+    "deploy-production")
+        echo "🚀 Production deployment..."
+        source .env.docker
+        echo "📋 Stopping containers..."
+        docker-compose down
+        echo "🔨 Building containers..."
+        docker-compose up --build -d
+        echo "⏳ Waiting for containers to start..."
+        sleep 40
+        echo "📦 Installing production dependencies..."
+        docker-compose exec app composer install --no-dev --optimize-autoloader
+        echo "🔧 Running migrations..."
+        docker-compose exec app php artisan migrate --force
+        echo "⚡ Optimizing for production..."
+        docker-compose exec app php artisan config:cache
+        docker-compose exec app php artisan route:cache
+        docker-compose exec app php artisan view:cache
+        docker-compose exec app php artisan storage:link
+        echo "🔍 Setting permissions..."
+        docker-compose exec app chown -R www-data:www-data storage bootstrap/cache
+        docker-compose exec app chmod -R 775 storage bootstrap/cache
+        echo "✅ Production deployment completed!"
+        ;;
     *)
-        echo "📖 Usage: $0 {start|stop|restart|logs|shell|migrate|seed|cache-clear|cache-optimize|status|backup|update|build|deploy|test|fresh|queue}"
+        echo "📖 Usage: $0 {start|stop|restart|logs|shell|migrate|seed|cache-clear|cache-optimize|status|backup|update|build|deploy|test|fresh|queue|composer-install|composer-dev|fix-pail|deploy-production}"
         echo ""
         echo "Commands:"
-        echo "  start         - Start the application"
-        echo "  stop          - Stop the application"
-        echo "  restart       - Restart the application"
-        echo "  logs          - Show application logs"
-        echo "  shell         - Open shell in container"
-        echo "  migrate       - Run database migrations"
-        echo "  seed          - Run database seeders"
-        echo "  cache-clear   - Clear all cache"
-        echo "  cache-optimize - Optimize cache for production"
-        echo "  status        - Show container and health status"
-        echo "  backup        - Create database backup"
-        echo "  update        - Update application from git"
-        echo "  build         - Build the application"
-        echo "  deploy        - Deploy the application"
-        echo "  test          - Run application tests"
-        echo "  fresh         - Fresh migration and seed"
-        echo "  queue         - Start the queue worker"
+        echo "  start            - Start the application"
+        echo "  stop             - Stop the application"
+        echo "  restart          - Restart the application"
+        echo "  logs             - Show application logs"
+        echo "  shell            - Open shell in container"
+        echo "  migrate          - Run database migrations"
+        echo "  seed             - Run database seeders"
+        echo "  cache-clear      - Clear all cache"
+        echo "  cache-optimize   - Optimize cache for production"
+        echo "  status           - Show container and health status"
+        echo "  backup           - Create database backup"
+        echo "  update           - Update application from git"
+        echo "  build            - Build the application"
+        echo "  deploy           - Deploy the application"
+        echo "  deploy-production - Deploy for production environment"
+        echo "  test             - Run application tests"
+        echo "  fresh            - Fresh migration and seed"
+        echo "  queue            - Start the queue worker"
+        echo "  composer-install - Install production dependencies"
+        echo "  composer-dev     - Install dev dependencies"
+        echo "  fix-pail         - Fix Laravel Pail error"
         exit 1
         ;;
 esac

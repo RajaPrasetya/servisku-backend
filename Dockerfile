@@ -23,8 +23,6 @@ RUN apt-get update && apt-get install -y \
     libpq-dev \
     zip \
     unzip \
-    nodejs \
-    npm \
     supervisor \
     cron \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
@@ -32,6 +30,15 @@ RUN apt-get update && apt-get install -y \
     && docker-php-ext-install pdo_mysql pdo_pgsql mbstring exif pcntl bcmath zip opcache \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js 18 (LTS) from NodeSource
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Verify Node.js and npm versions
+RUN node --version && npm --version
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -93,7 +100,7 @@ COPY .env.example .env
 RUN composer install --optimize-autoloader --no-dev --no-interaction --prefer-dist
 
 # Install Node.js dependencies and build assets
-RUN npm install --production=false \
+RUN npm install --legacy-peer-deps \
     && npm run build \
     && npm cache clean --force \
     && rm -rf node_modules
